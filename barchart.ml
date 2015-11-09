@@ -46,12 +46,18 @@ let away_sd = fun sd mean value ->
 			if (mean +. float(i) *. sd) > value then i else addSD (i + 1) in
 				addSD 1
 
+let barPlotWidth = 100.
+let barPlotMargin = 10.
+
 let barPlot = fun canvas2Dcontext canvasHeight xStart y ->
 	Firebug.console##log(Js.string "plot a bar");
-	canvas2Dcontext##fillRect (xStart +. 10., canvasHeight -. y, 100., y);
-	xStart +. 120.
+	canvas2Dcontext##fillRect (xStart +. barPlotMargin, canvasHeight -. y, barPlotWidth, y);
+	xStart +. barPlotWidth +. barPlotMargin
 
-let plot = fun canvas data gridSlots sd startFromY ->
+let getStartIndex = fun dragWidth ->
+	int_of_float(dragWidth /. (barPlotWidth +. barPlotMargin))
+
+let plot = fun canvas data gridSlots sd startFromY dragWidth->
 	(*Start from denotes where we start from on Y axis*)
 	Firebug.console##log(Js.string "plotting");
 	let c = canvas##getContext (Html._2d_) in
@@ -69,7 +75,8 @@ let plot = fun canvas data gridSlots sd startFromY ->
   			else 
   				() 
   			in
-  				plotter 0. 0;
+  				let startIndex = getStartIndex dragWidth in
+	  				plotter (0. -. dragWidth +. (float(startIndex) *. (barPlotWidth +. barPlotMargin))) startIndex;
 
     ()
 
@@ -104,7 +111,7 @@ let start _ =
 									*)
 									let gridSlots = sdAwayMin + sdAwayMax in
 									let startFromY = (avg -. (standard_deviation *. float(sdAwayMin))) in
-										plot canvas arrayData gridSlots standard_deviation startFromY;
+										plot canvas arrayData gridSlots standard_deviation startFromY 0.;
       Lwt.return () (* Lwt.return creates a thread which has aldready terminated*)
    );
    Js._false
