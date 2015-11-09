@@ -51,7 +51,7 @@ let barPlot = fun canvas2Dcontext canvasHeight xStart y ->
 	canvas2Dcontext##fillRect (xStart +. 10., canvasHeight -. y, 100., y);
 	xStart +. 120.
 
-let plot = fun canvas data gridSlots startFromY ->
+let plot = fun canvas data gridSlots sd startFromY ->
 	(*Start from denotes where we start from on Y axis*)
 	Firebug.console##log(Js.string "plotting");
 	let c = canvas##getContext (Html._2d_) in
@@ -61,8 +61,11 @@ let plot = fun canvas data gridSlots startFromY ->
 		c##fillStyle <- Js.string "red";
   		let rec plotter = fun consumedWidth i ->
   			if consumedWidth < w then 
-  				let consumedWidth = barPlot c h consumedWidth ((List.nth data i) -. startFromY) in
-  					plotter consumedWidth (i + 1)
+  				(* We have gridSlots each of height sd *)
+  				(* So a data with value h will occupy (total Height * dataValue) / (gridSlots * sd) *)
+  				let dataHeight = (h *. (List.nth data i) ) /. (float(gridSlots) *. sd) in
+	  				let consumedWidth = barPlot c h consumedWidth dataHeight in
+	  					plotter consumedWidth (i + 1)
   			else 
   				() 
   			in
@@ -101,7 +104,7 @@ let start _ =
 									*)
 									let gridSlots = sdAwayMin + sdAwayMax in
 									let startFromY = (avg -. (standard_deviation *. float(sdAwayMin))) in
-										plot canvas arrayData gridSlots startFromY;
+										plot canvas arrayData gridSlots standard_deviation startFromY;
       Lwt.return () (* Lwt.return creates a thread which has aldready terminated*)
    );
    Js._false
