@@ -193,18 +193,13 @@ let handle_drag = fun element move (* stop click *) ->
 	      				Js._true);
 		Js._true)
 
-let startPlotting _ =
+let startPlotting = fun dataGetter ->
   Lwt.ignore_result
-   (getData () >>= fun (arrayData) ->
+   (dataGetter >>= fun (arrayData) ->
       Firebug.console##log(Js.string "start");
         (* create a canvas *)
         let doc = Html.document in
      		let page = doc##documentElement in
-     			page##style##overflow <- Js.string "hidden";
-			    page##style##height <- Js.string "100%";
-			    doc##body##style##overflow <- Js.string "hidden";
-			    doc##body##style##margin <- Js.string "0px";
-			    doc##body##style##height <- Js.string "100%";
 			    dragWidth := 0.;
 			    redraw_funct := (fun () -> ());
 			    let w = page##clientWidth in
@@ -279,10 +274,62 @@ let startPlotting _ =
    );
    Js._false
 
+
+let displayDatasetHeader _ =
+	Lwt.ignore_result
+   		(loadData () >>= fun (loadedData) ->
+        let doc = Html.document in
+     		let page = doc##documentElement in
+     			page##style##overflow <- Js.string "hidden";
+			    page##style##height <- Js.string "100%";
+			    doc##body##style##overflow <- Js.string "hidden";
+			    doc##body##style##margin <- Js.string "0px";
+			    doc##body##style##height <- Js.string "100%";
+			    let header = Html.createDiv Html.document in
+			     	header##style##display <- Js.string "flex";
+			     	header##style##marginBottom <- Js.string "20px";
+			     	header##style##marginTop <- Js.string "20px";
+			     	Dom.appendChild doc##body header;
+			     	
+			     	let addDataSetheader = (fun data -> 
+			     		let dataButton = Html.createDiv Html.document in
+			     			Dom.appendChild header dataButton;
+			     			let id = data.id in
+			     				let txt = doc##createTextNode (Js.string id) in
+			     					Dom.appendChild dataButton txt;
+			     				dataButton##onclick <-  Html.handler (fun ev ->
+			     					(*remove holder*)
+			     					let holder = Js.Opt.get (doc##getElementById(Js.string "mainHolder"))
+			     						(fun () -> assert false) in 
+			     							Dom.removeChild doc##body holder;
+
+			     					let heldData = data.data in 
+			     						let dataGetter = (
+			     							Lwt.return (List.map float_of_int heldData)
+			     						)
+			     						 in
+			     							startPlotting dataGetter
+			     				);
+			     			())
+			     		in
+			     			List.iter addDataSetheader loadedData;
+			     	let firstDataSet = (List.nth loadedData 0) in
+			     		let heldData = firstDataSet.data in
+			     			let dataGetter = (
+			     				Lwt.return (List.map float_of_int heldData)
+			     			) 
+				     		in
+				     			ignore (startPlotting dataGetter);
+
+   		Lwt.return ()
+   	);
+   Js._false
+
 let startHandler _ =
   try
     ignore (Html.createCanvas (Html.window##document));
-    startPlotting ()
+    (* startPlotting () *)
+    displayDatasetHeader ()
   with Html.Canvas_not_available ->
     Js._false
 
