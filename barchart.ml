@@ -7,21 +7,15 @@
 *)
 module Html = Dom_html
 let (>>=) = Lwt.bind
-type dataset = { id : string; data : int list; }
+type dataset = { id : string; data : float list; }
 
 
-let loadData () =
-	let data1 =  {id="DataSet-1"; data=[1;33;23;78;79;67;87;35;28;90;207;76;45;36;88;87;45;10;89;77;98;56;46;89;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45]} in
-	let data2 =  {id="DataSet-2"; data=[145;147;178;190;153;145;166;177;154;153;142;178;179;167;187;165;178;190;207;176;145;166;188;187;178;179;167;187;195;198;190;207;176;195;186];} in
-	Lwt.return ([data1;data2])
+let rec transpose list = match list with
+	| []             -> []
+	| []   :: xss    -> transpose xss
+	| (x::xs) :: xss ->
+	    (x :: List.map List.hd xss) :: transpose (xs :: List.map List.tl xss)   
 
-
-let getData () =
-	(loadData ()  >>= fun (loadedData) ->
-		let data = (List.nth loadedData 1) in
-			let arrayData = data.data in
-				Lwt.return (List.map float_of_int arrayData)
-	)
 
 let create_canvas w h =
 	let d = Html.window##document in
@@ -29,6 +23,7 @@ let create_canvas w h =
     		c##width <- w;
 			c##height <- h;
 			c
+
 
 let getAvg = fun data -> 
 	List.fold_left ( +.) 0. data /. float(List.length data)
@@ -274,10 +269,9 @@ let startPlotting = fun dataGetter ->
    );
    Js._false
 
-
-let displayDatasetHeader _ =
+let displayDatasetHeader dataLoader =
 	Lwt.ignore_result
-   		(loadData () >>= fun (loadedData) ->
+   		(dataLoader  >>= fun (loadedData) ->
         let doc = Html.document in
      		let page = doc##documentElement in
      			page##style##overflow <- Js.string "hidden";
@@ -285,6 +279,11 @@ let displayDatasetHeader _ =
 			    doc##body##style##overflow <- Js.string "hidden";
 			    doc##body##style##margin <- Js.string "0px";
 			    doc##body##style##height <- Js.string "100%";
+
+			    let fileDragArea = Js.Opt.get (doc##getElementById(Js.string "fileDragArea"))
+			     	(fun () -> assert false) in 
+			     		Dom.removeChild doc##body fileDragArea;
+
 			    let header = Html.createDiv Html.document in
 			     	header##style##display <- Js.string "flex";
 			     	header##style##marginBottom <- Js.string "20px";
@@ -315,7 +314,7 @@ let displayDatasetHeader _ =
 
 			     					let heldData = data.data in 
 			     						let dataGetter = (
-			     							Lwt.return (List.map float_of_int heldData)
+			     							Lwt.return (heldData)
 			     						)
 			     						 in
 			     							startPlotting dataGetter
@@ -326,7 +325,7 @@ let displayDatasetHeader _ =
 			     	let firstDataSet = (List.nth loadedData 0) in
 			     		let heldData = firstDataSet.data in
 			     			let dataGetter = (
-			     				Lwt.return (List.map float_of_int heldData)
+			     				Lwt.return (heldData)
 			     			) 
 				     		in
 				     			ignore (startPlotting dataGetter);
@@ -335,11 +334,78 @@ let displayDatasetHeader _ =
    	);
    Js._false
 
+
+
+let getDataFromFile = fun readFile ->
+	Lwt.ignore_result
+		(readFile  >>= fun (textData) ->
+			
+			let ocamlTextString = Js.to_string textData in
+				Firebug.console##log(Js.string ocamlTextString);
+
+				let listLines = Regexp.split (Regexp.regexp "\n") ocamlTextString in
+					Firebug.console##log(Js.array (Array.of_list listLines) );
+					let splitValues = ( fun line -> 
+						Firebug.console##log(Js.string line);
+						let l = Regexp.split (Regexp.regexp ",")  line in
+							Firebug.console##log(Js.array (Array.of_list l) );
+							l
+					) in
+						let valuesLLT = List.map splitValues listLines in
+							let valuesLL = transpose valuesLLT in 
+								let createDataSet = ( fun l ->
+									match l with 
+										| [] -> {id=""; data=[];}
+										| h::rem -> {id=h; data=(List.map float_of_string rem);}
+								) in
+									let dataSet = List.map createDataSet valuesLL in
+										let dataLoader = (
+											Lwt.return(dataSet)
+										) in
+											ignore (displayDatasetHeader dataLoader);
+
+			Lwt.return ()
+		)
+
+
+let handleFileDrag () = (
+	let doc = Html.document in
+     	let fileDragArea = Html.createDiv Html.document in
+     		Dom.appendChild doc##body fileDragArea;
+     		fileDragArea##style##height <- Js.string "100px";
+     		fileDragArea##style##width <- Js.string "100px";
+     		fileDragArea##style##borderStyle <- Js.string "dotted";
+     		fileDragArea##setAttribute (Js.string "id", Js.string "fileDragArea");
+
+     			fileDragArea##ondrop <- Html.handler (fun ev ->
+     				Firebug.console##log(Js.string "A file was dropped");
+     				let files = ev##dataTransfer##files in 
+     					(* only take the first file*)
+     					Firebug.console##log(Js.string (string_of_int files##length));
+     					Js.Opt.iter (files##item(0)) (fun file -> 
+     							let getFileText = (
+     								File.readAsText file
+     							) in
+     								getDataFromFile getFileText;
+     							()	
+     						);
+     				Js._false;
+			    );
+     			fileDragArea##ondragover <- Html.handler (fun _ ->
+     				Firebug.console##log(Js.string "Drag over event");
+     				Js._false;
+			    );
+	()
+)
+
+
 let startHandler _ =
   try
     ignore (Html.createCanvas (Html.window##document));
     (* startPlotting () *)
-    displayDatasetHeader ()
+    (* displayDatasetHeader () *)
+    handleFileDrag ();
+    Js._false
   with Html.Canvas_not_available ->
     Js._false
 
