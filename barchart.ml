@@ -289,15 +289,25 @@ let displayDatasetHeader _ =
 			     	header##style##display <- Js.string "flex";
 			     	header##style##marginBottom <- Js.string "20px";
 			     	header##style##marginTop <- Js.string "20px";
+			     	header##style##overflowY <- Js.string "scroll";
 			     	Dom.appendChild doc##body header;
 			     	
 			     	let addDataSetheader = (fun data -> 
 			     		let dataButton = Html.createDiv Html.document in
 			     			Dom.appendChild header dataButton;
+			     			dataButton##style##backgroundColor <- Js.string "bisque";
+			     			dataButton##style##marginLeft <- Js.string "20px";
+			     			dataButton##style##marginRight <- Js.string "20px";
+			     			dataButton##style##padding <- Js.string "10px";
+			     			dataButton##style##borderRadius <- Js.string "10px";
+			     			dataButton##style##borderStyle <- Js.string "groove";
+
 			     			let id = data.id in
 			     				let txt = doc##createTextNode (Js.string id) in
 			     					Dom.appendChild dataButton txt;
 			     				dataButton##onclick <-  Html.handler (fun ev ->
+
+			     					dataButton##style##borderStyle <- Js.string "ridge";
 			     					(*remove holder*)
 			     					let holder = Js.Opt.get (doc##getElementById(Js.string "mainHolder"))
 			     						(fun () -> assert false) in 
