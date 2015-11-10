@@ -10,6 +10,7 @@ let (>>=) = Lwt.bind
 
 let getData () =
 	let arrayData = [1;33;23;78;79;67;87;35;28;90;207;76;45;36;88;87;45;10;89;77;98;56;46;89;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45]
+	(* let arrayData = [145;147;178;190;153;145;166;177;154;153;142;178;179;167;187;165;178;190;207;176;145;166;188;187;178;179;167;187;195;198;190;207;176;195;186] *)
 		in
 	Lwt.return (List.map float_of_int arrayData)
 
@@ -92,7 +93,7 @@ let plot = fun canvas data gridSlots sd startFromY dragWidth->
   			if consumedWidth < w then 
   				(* We have gridSlots each of height sd *)
   				(* So a data with value h will occupy (total Height * dataValue) / (gridSlots * sd) *)
-  				let dataHeight = (h *. (List.nth data i) ) /. (float(gridSlots) *. sd) in
+  				let dataHeight = (h *. ((List.nth data i) -. startFromY) ) /. (float(gridSlots) *. sd) in
 	  				let consumedWidth = barPlot c h consumedWidth dataHeight (List.nth data i) in
 	  					plotter consumedWidth (i + 1)
   			else 
@@ -102,7 +103,7 @@ let plot = fun canvas data gridSlots sd startFromY dragWidth->
 	  				plotter (0. -. dragWidth +. (float(startIndex) *. (barPlotWidth +. barPlotMargin))) startIndex;
     ()
 
-let markGridY = fun yGridCanvas gridSlots standard_deviation ->
+let markGridY = fun yGridCanvas gridSlots standard_deviation startFromY->
 	Firebug.console##log(Js.string "marking grid");
 	let c = yGridCanvas##getContext (Html._2d_) in
 	let w = float yGridCanvas##width in
@@ -114,7 +115,7 @@ let markGridY = fun yGridCanvas gridSlots standard_deviation ->
 	  			c##fillStyle <- Js.string "darkkhaki";
 	  			c##fillRect ( (w *. 0.5), ( h -. (float(gridSlots - i) *. (h /. float(gridSlots))) -. 1.), (w *. 0.8), 1.);
 	  			c##fillStyle <- Js.string "black";
-	  			c##fillText ( Js.string (Printf.sprintf "%.2f" (float(gridSlots - i) *. standard_deviation)), (w *. 0.1), ( h -. (float(gridSlots - i) *. (h /. float(gridSlots))) -. 1.));
+	  			c##fillText ( Js.string (Printf.sprintf "%.2f" (startFromY +. float(gridSlots - i) *. standard_deviation)), (w *. 0.1), ( h -. (float(gridSlots - i) *. (h /. float(gridSlots))) -. 1.));
 	  			markSlots (i+1)
   			end else 
 	  			() 
@@ -227,6 +228,23 @@ let start _ =
 										We need to plot between sdAwayMin <---> sdAwayMax on y axis
 										We can fit our data exactly in sdAwayMin + sdAwayMax gridSlots
 									*)
+
+									(*debug logs*)
+									Firebug.console##log(Js.string "standard_deviation");
+									Firebug.console##log(Js.string (string_of_float standard_deviation) );
+									Firebug.console##log(Js.string "avg");
+									Firebug.console##log(Js.string (string_of_float avg) );
+									Firebug.console##log(Js.string "maxVal");
+									Firebug.console##log(Js.string (string_of_float maxVal) );
+									Firebug.console##log(Js.string "minVal");
+									Firebug.console##log(Js.string (string_of_float minVal) );
+									Firebug.console##log(Js.string "sdAwayMin");
+									Firebug.console##log(Js.string (string_of_int sdAwayMin) );
+									Firebug.console##log(Js.string "sdAwayMax");
+									Firebug.console##log(Js.string (string_of_int sdAwayMax) );
+
+
+
 									let gridSlots = sdAwayMin + sdAwayMax in
 									let startFromY = (avg -. (standard_deviation *. float(sdAwayMin))) in
 										redraw_funct := (fun () ->
@@ -239,7 +257,7 @@ let start _ =
 										);
 										perform_redraw ();
 
-										markGridY yGridcanvas gridSlots standard_deviation;
+										markGridY yGridcanvas gridSlots standard_deviation startFromY;
 										markGridLines gridLines gridSlots standard_deviation;
 
 							handle_drag canvas (fun x0 x1 -> 
