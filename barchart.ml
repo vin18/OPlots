@@ -52,9 +52,13 @@ let dragWidth = ref 0.
 let need_redraw = ref false
 let redraw_funct = ref (fun () -> ())
 
-let barPlot = fun canvas2Dcontext canvasHeight xStart y ->
+let barPlot = fun canvas2Dcontext canvasHeight xStart y dataValue->
 	Firebug.console##log(Js.string "plot a bar");
+	canvas2Dcontext##fillStyle <- Js.string "red";
 	canvas2Dcontext##fillRect (xStart +. barPlotMargin, canvasHeight -. y, barPlotWidth, y);
+	canvas2Dcontext##fillStyle <- Js.string "black";
+	canvas2Dcontext##fillText ( Js.string (Printf.sprintf "%.2f" (dataValue)), xStart +. barPlotMargin, canvasHeight -. y -. 10.);
+
 	xStart +. barPlotWidth +. barPlotMargin
 
 let getStartIndex = fun dragWidth ->
@@ -84,13 +88,12 @@ let plot = fun canvas data gridSlots sd startFromY dragWidth->
 	let w = float canvas##width in
   	let h = float canvas##height in
 		c##clearRect (0., 0., w, h);
-		c##fillStyle <- Js.string "red";
   		let rec plotter = fun consumedWidth i ->
   			if consumedWidth < w then 
   				(* We have gridSlots each of height sd *)
   				(* So a data with value h will occupy (total Height * dataValue) / (gridSlots * sd) *)
   				let dataHeight = (h *. (List.nth data i) ) /. (float(gridSlots) *. sd) in
-	  				let consumedWidth = barPlot c h consumedWidth dataHeight in
+	  				let consumedWidth = barPlot c h consumedWidth dataHeight (List.nth data i) in
 	  					plotter consumedWidth (i + 1)
   			else 
   				() 
@@ -134,6 +137,16 @@ let markGridLines = fun gridLines gridSlots standard_deviation ->
 	  			() 
 	  		in
 	  			markSlotsX 0;
+  		(* Mark the Y lines*)
+  		let rec markSlotsY = fun i ->
+  			if float(i) *. 20. <= (w) then begin
+	  			c##fillStyle <- Js.string "darkkhaki";
+	  			c##fillRect ( float(i) *. 20., 0., 1., h);
+	  			markSlotsY (i+1)
+  			end else 
+	  			() 
+	  		in
+	  			markSlotsY 0;
 	()
 
 
