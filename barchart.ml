@@ -7,12 +7,21 @@
 *)
 module Html = Dom_html
 let (>>=) = Lwt.bind
+type dataset = { id : string; data : int list; }
+
+
+let loadData () =
+	let data1 =  {id="DataSet-1"; data=[1;33;23;78;79;67;87;35;28;90;207;76;45;36;88;87;45;10;89;77;98;56;46;89;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45]} in
+	let data2 =  {id="DataSet-2"; data=[145;147;178;190;153;145;166;177;154;153;142;178;179;167;187;165;178;190;207;176;145;166;188;187;178;179;167;187;195;198;190;207;176;195;186];} in
+	Lwt.return ([data1;data2])
+
 
 let getData () =
-	let arrayData = [1;33;23;78;79;67;87;35;28;90;207;76;45;36;88;87;45;10;89;77;98;56;46;89;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45;79;67;87;35;28;90;207;76;45;36;88;87;45]
-	(* let arrayData = [145;147;178;190;153;145;166;177;154;153;142;178;179;167;187;165;178;190;207;176;145;166;188;187;178;179;167;187;195;198;190;207;176;195;186] *)
-		in
-	Lwt.return (List.map float_of_int arrayData)
+	(loadData ()  >>= fun (loadedData) ->
+		let data = (List.nth loadedData 1) in
+			let arrayData = data.data in
+				Lwt.return (List.map float_of_int arrayData)
+	)
 
 let create_canvas w h =
 	let d = Html.window##document in
@@ -150,9 +159,6 @@ let markGridLines = fun gridLines gridSlots standard_deviation ->
 	  			markSlotsY 0;
 	()
 
-
-let data = getData ()
-
 let handle_drag = fun element move (* stop click *) ->
 	let fuzz = 4 in
 		element##onmousedown <- Html.handler (fun ev ->
@@ -187,9 +193,9 @@ let handle_drag = fun element move (* stop click *) ->
 	      				Js._true);
 		Js._true)
 
-let start _ =
+let startPlotting _ =
   Lwt.ignore_result
-   (data >>= fun (arrayData) ->
+   (getData () >>= fun (arrayData) ->
       Firebug.console##log(Js.string "start");
         (* create a canvas *)
         let doc = Html.document in
@@ -205,6 +211,7 @@ let start _ =
 			     	let h = (page##clientHeight / 2) in
 			     	let holder = Html.createDiv Html.document in
 			     		holder##style##display <- Js.string "flex";
+			     		holder##setAttribute (Js.string "id", Js.string "mainHolder");
 			     		let canvas = create_canvas w h in
 			     		let gridLines = create_canvas w h in
 			     			 canvas##style##display <- Js.string "block";
@@ -275,7 +282,7 @@ let start _ =
 let startHandler _ =
   try
     ignore (Html.createCanvas (Html.window##document));
-    start ()
+    startPlotting ()
   with Html.Canvas_not_available ->
     Js._false
 
