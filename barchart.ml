@@ -320,16 +320,27 @@ let displayDatasetHeader dataLoader =
 			     			dataButton##style##backgroundColor <- Js.string "bisque";
 			     			dataButton##style##marginLeft <- Js.string "20px";
 			     			dataButton##style##marginRight <- Js.string "20px";
+			     			dataButton##style##marginBottom <- Js.string "10px";
 			     			dataButton##style##padding <- Js.string "10px";
 			     			dataButton##style##borderRadius <- Js.string "10px";
 			     			dataButton##style##borderStyle <- Js.string "groove";
+			     			dataButton##setAttribute (Js.string "state", Js.string "unselected");
 
 			     			let id = data.id in
 			     				let txt = doc##createTextNode (Js.string id) in
 			     					Dom.appendChild dataButton txt;
 			     				dataButton##onclick <-  Html.handler (fun ev ->
-
+			     					(*  deselect all other buttons*)
+			     					let buttons = header##childNodes in 
+			     						for i = (buttons##length - 1) downto 0
+			     							do
+			     								 let button = Js.Opt.get (Js.Opt.bind ( buttons##item(i) ) Dom_html.CoerceTo.element)
+			     								 	(fun _ -> assert false) in
+			     								 	button##style##borderStyle <- Js.string "groove";
+			     								 	button##setAttribute (Js.string "state", Js.string "unselected");
+			     							done;
 			     					dataButton##style##borderStyle <- Js.string "ridge";
+			     					dataButton##setAttribute (Js.string "state", Js.string "selected");
 			     					(*remove holder*)
 			     					let holder = Js.Opt.get (doc##getElementById(Js.string "mainHolder"))
 			     						(fun () -> assert false) in 
@@ -364,14 +375,14 @@ let getDataFromFile = fun readFile ->
 		(readFile  >>= fun (textData) ->
 			
 			let ocamlTextString = Js.to_string textData in
-				Firebug.console##log(Js.string ocamlTextString);
+				(* Firebug.console##log(Js.string ocamlTextString); *)
 
 				let listLines = Regexp.split (Regexp.regexp "\n") ocamlTextString in
-					Firebug.console##log(Js.array (Array.of_list listLines) );
+					(* Firebug.console##log(Js.array (Array.of_list listLines) ); *)
 					let splitValues = ( fun line -> 
-						Firebug.console##log(Js.string line);
+						(* Firebug.console##log(Js.string line); *)
 						let l = Regexp.split (Regexp.regexp ",")  line in
-							Firebug.console##log(Js.array (Array.of_list l) );
+							(* Firebug.console##log(Js.array (Array.of_list l) ); *)
 							l
 					) in
 						let valuesLLT = List.map splitValues listLines in
