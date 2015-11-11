@@ -205,8 +205,10 @@ let startPlotting = fun dataGetter ->
 			     		let canvas = create_canvas w h in
 			     		let gridLines = create_canvas w h in
 			     			 canvas##style##display <- Js.string "block";
+			     			 gridLines##style##display <- Js.string "block";
 			    			 Dom.appendChild doc##body holder;
 			    			 let yGridcanvas = create_canvas (page##clientWidth / 10) (page##clientHeight / 2) in
+								yGridcanvas##style##display <- Js.string "block";
 								Dom.appendChild holder yGridcanvas;
 							 let plotholder = Html.createDiv Html.document in
 							 plotholder##style##position <- Js.string "relative";
@@ -256,6 +258,27 @@ let startPlotting = fun dataGetter ->
 
 										markGridY yGridcanvas gridSlots standard_deviation startFromY;
 										markGridLines gridLines gridSlots standard_deviation;
+
+										Html.window##onresize <- Html.handler 
+										 	(fun _ ->
+										 			let w = page##clientWidth in
+										 				let h = page##clientHeight / 2 in
+
+										 					(*reset holder height*)
+										 					holder##style##height <- Js.string (string_of_int(h) ^ "px");
+
+															(*redraw scale*)
+															yGridcanvas##width <- (w / 10);
+															yGridcanvas##height <- h;
+															markGridY yGridcanvas gridSlots standard_deviation startFromY;
+										 					(*redraw plot*)
+										 					schedule_redraw true;
+
+										 					(*redraw gridlines*)
+															gridLines##width <- w;
+															gridLines##height <- h;
+															markGridLines gridLines gridSlots standard_deviation;
+										 	Js._true);
 
 							handle_drag canvas (fun x0 x1 -> 
 								dragWidth := !dragWidth +. float(x0 - x1);
