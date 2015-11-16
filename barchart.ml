@@ -305,6 +305,7 @@ let displayDatasetHeader dataLoader =
 
 			    let resetFile = Html.createDiv Html.document in
 			    	resetFile##style##backgroundColor <- Js.string "cadetblue";
+			    	resetFile##style##cursor <- Js.string "pointer";
 			     	resetFile##style##margin <- Js.string "20px";
 			     	resetFile##style##padding <- Js.string "10px";
 			     	resetFile##style##borderRadius <- Js.string "10px";
@@ -312,6 +313,9 @@ let displayDatasetHeader dataLoader =
 			     	let txt = doc##createTextNode (Js.string "RESET") in
 			     		Dom.appendChild resetFile txt;
 			    	Dom.appendChild doc##body resetFile;
+			    	resetFile##onclick <- Html.handler (fun _ -> 
+			    		Html.window##location##reload ();
+			    		Js._false);
 
 			    let fileDragArea = Js.Opt.get (doc##getElementById(Js.string "fileDragArea"))
 			     	(fun () -> assert false) in 
@@ -334,6 +338,7 @@ let displayDatasetHeader dataLoader =
 			     			dataButton##style##padding <- Js.string "10px";
 			     			dataButton##style##borderRadius <- Js.string "10px";
 			     			dataButton##style##borderStyle <- Js.string "groove";
+			     			dataButton##style##cursor <- Js.string "pointer";
 			     			dataButton##setAttribute (Js.string "state", Js.string "unselected");
 
 			     			let id = data.id in
@@ -414,12 +419,23 @@ let getDataFromFile = fun readFile ->
 
 let handleFileDrag () = (
 	let doc = Html.document in
+		let w = doc##documentElement##clientWidth in
+		let h = doc##documentElement##clientHeight in
      	let fileDragArea = Html.createDiv Html.document in
      		Dom.appendChild doc##body fileDragArea;
-     		fileDragArea##style##height <- Js.string "100px";
-     		fileDragArea##style##width <- Js.string "100px";
+     		fileDragArea##style##height <- Js.string (string_of_int(h/2) ^ "px");
+     		fileDragArea##style##width <- Js.string (string_of_int(w/2) ^ "px");
+     		fileDragArea##style##margin <- Js.string "auto";
+     		fileDragArea##style##marginTop <- Js.string (string_of_int(h/4) ^ "px");
      		fileDragArea##style##borderStyle <- Js.string "dotted";
+     		fileDragArea##style##borderColor <- Js.string "black";
+     		fileDragArea##style##color <- Js.string "grey";
+     		fileDragArea##style##textAlign <- Js.string "center";
+     		fileDragArea##style##verticalAlign <- Js.string "middle";
+     		fileDragArea##style##lineHeight <- Js.string (string_of_int(h/2) ^ "px");
      		fileDragArea##setAttribute (Js.string "id", Js.string "fileDragArea");
+			let txt = doc##createTextNode (Js.string "Drag a CSV file Here") in
+			    Dom.appendChild fileDragArea txt;
 
      			fileDragArea##ondrop <- Html.handler (fun ev ->
      				Firebug.console##log(Js.string "A file was dropped");
