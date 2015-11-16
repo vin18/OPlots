@@ -303,6 +303,16 @@ let displayDatasetHeader dataLoader =
 			    doc##body##style##margin <- Js.string "0px";
 			    doc##body##style##height <- Js.string "100%";
 
+			    let resetFile = Html.createDiv Html.document in
+			    	resetFile##style##backgroundColor <- Js.string "cadetblue";
+			     	resetFile##style##margin <- Js.string "20px";
+			     	resetFile##style##padding <- Js.string "10px";
+			     	resetFile##style##borderRadius <- Js.string "10px";
+			     	resetFile##setAttribute (Js.string "id", Js.string "resetButton");
+			     	let txt = doc##createTextNode (Js.string "RESET") in
+			     		Dom.appendChild resetFile txt;
+			    	Dom.appendChild doc##body resetFile;
+
 			    let fileDragArea = Js.Opt.get (doc##getElementById(Js.string "fileDragArea"))
 			     	(fun () -> assert false) in 
 			     		Dom.removeChild doc##body fileDragArea;
@@ -311,7 +321,7 @@ let displayDatasetHeader dataLoader =
 			     	header##style##display <- Js.string "flex";
 			     	header##style##marginBottom <- Js.string "20px";
 			     	header##style##marginTop <- Js.string "20px";
-			     	header##style##overflowY <- Js.string "scroll";
+			     	header##style##overflowX <- Js.string "scroll";
 			     	Dom.appendChild doc##body header;
 			     	
 			     	let addDataSetheader = (fun data -> 
